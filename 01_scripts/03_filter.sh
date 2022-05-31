@@ -54,6 +54,16 @@ tabix -p vcf $FILT_DIR/filtered.vcf.gz
 #    --recode \
 #    --stdout > $FILT_DIR/filtered_SNPs_indels.vcf
 
-# 3. Compress and tabix
+# 3. Seperate SNPs and indels 
+# bcftools filter -i "INFO/INDEL=1" $FILT_DIR/filtered_SNPs_indels.vcf > $FILT_DIR/filtered_indels.vcf
+# bcftools filter -e "INFO/INDEL=1" $FILT_DIR/filtered_SNPs_indels.vcf > $FILT_DIR/filtered_SNPs.vcf
+
+# 4. Compress and tabix
 #bgzip $FILT_DIR/filtered_SNPs_indels.vcf
 #tabix -p vcf $FILT_DIR/filtered_SNPs_indels.vcf.gz
+
+#bgzip $FILT_DIR/filtered_SNPs.vcf
+#tabix -p vcf $FILT_DIR/filtered_SNPs.vcf.gz
+
+#bgzip $FILT_DIR/filtered_indels.vcf
+#tabix -p vcf $FILT_DIR/filtered_indels.vcf.gz
