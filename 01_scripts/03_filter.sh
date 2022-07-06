@@ -24,14 +24,14 @@ zgrep -v ^\#\# $FILT_DIR/filtered.tmp.vcf | wc -l
 vcftools --gzvcf $FILT_DIR/filtered.tmp.vcf \
     --minQ 30 \
     --minGQ 20 \
-    --minDP 5 \
+    --minDP 10 \ # formerly 5
     --mac 2 \
     --max-alleles 2 \
-    --max-missing 0.7 \
+    --max-missing 0.9 \ # formerly 0.7
     --maf 0.05 \
     --recode \
     --stdout > $FILT_DIR/filtered.vcf
-
+    
 # 3. Compress and tabix
 bgzip $FILT_DIR/filtered.vcf
 tabix -p vcf $FILT_DIR/filtered.vcf.gz
