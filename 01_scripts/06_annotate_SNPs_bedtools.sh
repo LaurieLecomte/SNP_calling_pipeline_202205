@@ -61,12 +61,14 @@ less $GENOME_ANNOT | tail -n +2 | cut -f1-3,5 > 03_genome/"$(basename -s .tsv $G
 # Outlier SnP genes : will be used for "Eric" enrichment, i.e. outlier Fst SNP genes vs all known genes in the annotated genome
 # 2. Extract SVs with Fst values over fixed threshold
 less $ANNOT_DIR/ALL_SNPs/all_fst_SNPs_ALL.bed | awk -v val="$FIXED_FST" 'BEGIN{FS="\t"} $5 > val {print}' > $ANNOT_DIR/outlier_SNPs_fixed"$FIXED_FST"/outlier_SNPs_fixed"$FIXED_FST".bed 
+wc -l $ANNOT_DIR/outlier_SNPs_fixed"$FIXED_FST"/outlier_SNPs_fixed"$FIXED_FST".bed
 
 # 3. Find overlap between these outlier SV genes and ALL known genes using bedtools => for "Eric" enrichment
 
 bedtools window -w $DIST -a 03_genome/"$(basename -s .tsv $GENOME_ANNOT)".bed -b $ANNOT_DIR/outlier_SNPs_fixed"$FIXED_FST"/outlier_SNPs_fixed"$FIXED_FST".bed > $ANNOT_DIR/outlier_SNPs_fixed"$FIXED_FST"/outlier_SNPs_fixed"$FIXED_FST"_"$DIST"_bedtools.overlap 
 
 cut -f4 $ANNOT_DIR/outlier_SNPs_fixed"$FIXED_FST"/outlier_SNPs_fixed"$FIXED_FST"_"$DIST"_bedtools.overlap  | sort | uniq > $ANNOT_DIR/outlier_SNPs_fixed"$FIXED_FST"/outlier_SNPs_fixed"$FIXED_FST"_"$DIST"_bedtools.overlap.IDs
+wc -l $ANNOT_DIR/outlier_SNPs_fixed"$FIXED_FST"/outlier_SNPs_fixed"$FIXED_FST"_"$DIST"_bedtools.overlap.IDs
 
 # ALL SV genes, regardless of Fst : will be used for "Claire" enrichment, i.e. outlier Fst SV genes vs all SV genes, regardless of Fst
 # 1. Find overlap between all SV genes and known genes in the genome
