@@ -11,13 +11,16 @@ MERGED_DIR="06_merged"
 
 # 1. Create output file header based on one vcf file
 FIRST_CHR=$(less $CHR_LIST | head -n1)
-zgrep '^#' $OUT_DIR/"$FIRST_CHR".vcf.gz | grep -v '^##contig=<ID=scaf' > $MERGED_DIR/merged.vcf.gz
+zgrep '^#' $OUT_DIR/"$FIRST_CHR".vcf.gz | grep -v '^##contig=<ID=scaf' > $MERGED_DIR/merged.vcf
 
 # 2. Concat all VCFs together without their header lines beginning with '#' 
 cat $CHR_LIST | while read CHR
 do
-  zgrep -v '^#' $OUT_DIR/"$CHR".vcf.gz >> $MERGED_DIR/merged.vcf.gz
+  zgrep -v '^#' $OUT_DIR/"$CHR".vcf.gz >> $MERGED_DIR/merged.vcf
 done
+
+# 3. Compress
+bgzip $MERGED_DIR/merged.vcf
 
 # For SNPs AND indels : 
 ## Create output file header based on one vcf file
