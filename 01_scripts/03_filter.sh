@@ -27,17 +27,17 @@ module load bcftools/1.15
 module load htslib/1.8
 
 # 1. Add tags
-bcftools +fill-tags $MERGED_VCF -- --tag all -O z > $MERGED_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_tagged.vcf.gz
+bcftools +fill-tags $MERGED_VCF -Oz -- -t all > $MERGED_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_tagged.vcf.gz
 
 # Filter with same criteria as SVs
 # 2. Filter for depth > 1 (FORMAT/AD > 1) in genotyped samples, where at least 50% of samples have been genotyped
-bcftools filter -i "N_PASS(GT!='mis' & FMT/AD>0) > 30" $MERGED_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_tagged.vcf.gz -O z > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1.vcf.gz
+bcftools filter -i "N_PASS(GT!='mis' & FMT/AD>0) > 30" $MERGED_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_tagged.vcf.gz -Oz > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1.vcf.gz
 
 # 3. Filter for genotyped in >50% of samples
 #bcftools filter -i 'INFO/NS >= 30' $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_DP1.vcf.gz -O z > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_DP1_NS30.vcf.gz
 
 # 4. Filter for max number of alleles = 2
-bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1.vcf.gz -O z > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all.vcf.gz
+bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1.vcf.gz -Oz > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all.vcf.gz
 
 # 5. Filter for maf > 0.05 and < 0.95
 #bcftools filter -i 'INFO/MAF >= 0.05' && 'INFO/MAF <= 0.95' $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all.vcf.gz > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all_maf0.05.vcf
