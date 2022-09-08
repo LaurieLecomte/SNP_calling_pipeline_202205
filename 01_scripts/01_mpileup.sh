@@ -10,7 +10,7 @@ REF="03_genome/genome.fasta"     # reference genome
 BAM_LIST="02_infos/bam_list.txt" # list of bam files
 CHR=$1                           # region or chromosome for this job 
 OUT_DIR="05_calls"               # results directory
-CPU=4                            # number of threads to use per job
+CPU=2                            # number of threads to use per job
 
 # LOAD REQUIRED MODULES
 module load bcftools/1.12
