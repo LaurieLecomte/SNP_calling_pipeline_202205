@@ -27,7 +27,7 @@ module load bcftools/1.15
 module load htslib/1.8
 
 # 1. Add tags
-bcftools +fill-tags $MERGED_VCF -- --tag all -O z > $MERGED_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_tagged.vcf.gz
+bcftools +fill-tags $MERGED_VCF -Oz -- -t all > $MERGED_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_tagged.vcf.gz
 
 # Filter with same criteria as SVs
 # 2. Filter for depth > 1 (FORMAT/AD > 1) in genotyped samples, where at least 50% of samples have been genotyped
