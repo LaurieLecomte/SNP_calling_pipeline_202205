@@ -2,7 +2,7 @@
 
 # Filter SNPs 
 # Run this script from SNP_calling_pipeline_202205 directory using :
-# srun -c 1 --mem=10G -p medium --time=7-00:00:00 -J 03_filter -o log/03_filter_%j.log 01_scripts/03_filter.sh &
+# srun -c 2 --mem=10G -p medium --time=7-00:00:00 -J 03_filter -o log/03_filter_%j.log 01_scripts/03_filter.sh &
 
 # VARIABLES
 OUT_DIR="05_calls"
@@ -12,7 +12,7 @@ MERGED_VCF="$MERGED_DIR/merged.vcf.gz"
 
 FILT_DIR="07_filtered"
 
-#CPU=2
+CPU=2
 
 # TO DO : auto-format file names with pre-defined variables : 
 #MIN_DP=1
@@ -31,16 +31,16 @@ bcftools +fill-tags $MERGED_VCF -Oz -- -t all > $MERGED_DIR/"$(basename -s .vcf.
 
 # Filter with same criteria as SVs
 # 2. Filter for depth > 1 (FORMAT/AD > 1) in genotyped samples, where at least 50% of samples have been genotyped
-bcftools filter -i "N_PASS(GT!='mis' & FMT/AD>0) > 30" $MERGED_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_tagged.vcf.gz -O z > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1.vcf.gz
+bcftools filter -i "N_PASS(GT!='mis' & FMT/AD>0) > 30" $MERGED_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_tagged.vcf.gz -O z --threads $CPU > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1.vcf.gz
 
 # 3. Filter for genotyped in >50% of samples
-#bcftools filter -i 'INFO/NS >= 30' $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_DP1.vcf.gz -O z > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_DP1_NS30.vcf.gz
+#bcftools filter -i 'INFO/NS >= 30' $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_DP1.vcf.gz -O z --threads $CPU > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_DP1_NS30.vcf.gz
 
 # 4. Filter for max number of alleles = 2
-bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1.vcf.gz -O z > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all.vcf.gz
+bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1.vcf.gz -O z --threads $CPU > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all.vcf.gz
 
 # 5. Filter for maf > 0.05 and < 0.95
-#bcftools filter -i 'INFO/MAF >= 0.05' && 'INFO/MAF <= 0.95' $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all.vcf.gz > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all_maf0.05.vcf
+#bcftools filter -i 'INFO/MAF >= 0.05' && 'INFO/MAF <= 0.95' $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all.vcf.gz --threads $CPU > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all_maf0.05.vcf
 
 
 # 6. Compress and tabix
