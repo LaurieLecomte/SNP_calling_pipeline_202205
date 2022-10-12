@@ -15,7 +15,6 @@ FILE <- argv[1] # "$MAT_file"
 ID_SEX_POP <- argv[2]
 #pca_path <- argv[2] # $pca_path
 
-N_SAMPLES <- nrow(FILE)
 
 # 1. Load SNPs info
 ## Create a new column for SNP info name (CHR + position)
@@ -26,17 +25,17 @@ geno.012.pos <- read.table(paste0(FILE, ".pos")) %>% #read genotype_matrix.pos; 
 # 2. Load individuals info
 geno.012.indv <- read.table(paste0(FILE, ".indv"), col.names = c("ID")) #read genotype_matrix.indv
 #geno.012.indv <- read.table(paste0(FILE, ".pos")) 
-
+N_SAMPLES <- nrow(geno.012.indv)
 
 # 3. Load genotype matrix 
-geno.012 <- fread(FILE)[, -1] #read genotype_matrix and exclude 1st column from .012 matrix file 
+geno.012 <- fread(FILE, showProgress = TRUE)[, -1] #read genotype_matrix and exclude 1st column from .012 matrix file 
 
 ## Set rownames and colnames for the genotype matrix
 colnames(geno.012) <- geno.012.pos$locus #each column is a SNP
-#rownames(geno.012) <- geno.012.indv #each row is a different indv
+rownames(geno.012) <- geno.012.indv #each row is a different indv
 
 ## Inspect matrix
-#geno.012[1:12, 1:20] #show 12 first indv and 20 first SNPs 
+geno.012[1:12, 1:20] #show 12 first indv and 20 first SNPs 
 
 
 # 4. Imputation of missing genotypes : replace missing geno (-1) with the most frequent genotype (0, 1, 2) for given SNP
@@ -63,36 +62,41 @@ geno.012.imp <- apply(
 ## Save as table to .imp file
 write.table(geno.012.imp, paste0(FILE, ".imp"), sep = "\t", row.names = F, quote = F)
 
+## If the imputated matrix needs to be loaded from .imp file : 
+## geno.012.imp <- fread(paste0(FILE, ".imp"), header = TRUE, sep = "\t")
 
 # 5. Run PCA
 pca.all <- prcomp(geno.012.imp)
+
+# 6. Save PCA results and loadings 
+#replace Z by number of indv or samples
+##write.table(pca.all$x[, 1:Z], paste0(FILE, ".pca"), sep = "\t", quote = F)
+
+write.table(pca.all$x[, 1:N_SAMPLES], paste0(FILE, ".pca"), sep = "\t", quote = F)
+write.table(pca.all$rotation[, 1:N_SAMPLES], paste0(FILE, ".loadings"), sep = "\t", quote = F)
+saveRDS(pca.all, paste0(FILE, ".pca.rds"))
 
 ## Save screeplot
 jpeg(paste0(FILE ,"screeplot.jpg"))
 screeplot(pca.all)
 dev.off()
 
+## If pca needs to be loaded from .rds file : 
+## pca.all <- readRDS(paste0(FILE, ".pca.rds"))
 
-# 6. Get PCA stats info
+# 7. Get PCA stats info
 sum.pca <- summary(pca.all)
 
 ## Print stats info
-#sum.pca$importance[ ,1:5]
+sum.pca$importance[ ,1:5]
 
 
-# 7. Extract PCA % (proportion of variance * 100)
+# 8. Extract PCA % (proportion of variance * 100)
 var1 <- round(sum.pca$importance[2, 1]*100, 1) #prop of variance of PC 1 * 100
 var2 <- round(sum.pca$importance[2, 2]*100, 1) #prop of variance of PC 2 * 100
 var3 <- round(sum.pca$importance[2, 3]*100, 1) #prop of variance of PC 3 * 100
 var4 <- round(sum.pca$importance[2, 4]*100, 1) #prop of variance of PC 4 * 100
 
-
-# 8. Save PCA results and loadings 
-#replace Z by number of indv or samples
-#write.table(pca.all$x[, 1:Z], paste0(FILE, ".pca"), sep = "\t", quote = F)
-
-write.table(pca.all$x[, 1:N_SAMPLES], paste0(FILE, ".pca"), sep = "\t", quote = F)
-write.table(pca.all$rotation[, 1:N_SAMPLES], paste0(FILE, ".loadings"), sep = "\t", quote = F)
 
 
 # 9. Plot PCA
@@ -101,7 +105,7 @@ write.table(pca.all$rotation[, 1:N_SAMPLES], paste0(FILE, ".loadings"), sep = "\
 SNP_df <- as.data.frame(pca.all$x[ , 1:N_SAMPLES])
 
 ## Add column for pop data
-grouped <- fread(ID_SEX_POP, header = FALSE, col.names = c("ID", "sex", "pop")) # read ID - Pop correspondance file
+grouped <- read.table(ID_SEX_POP, header = FALSE, col.names = c("ID", "sex", "pop")) # read ID - Pop correspondance file
 
 ID_Pop <- merge(x = geno.012.indv, y = grouped, by = "ID") 
 
@@ -113,7 +117,7 @@ saveRDS(SNP_df, file = paste0(FILE, "_SNP_df.rds"))
 jpeg(paste0(FILE,".pc1-2.jpg"))
 
 PC_1_2 <- ggplot(data = SNP_df, aes(x = PC1, y = PC2)) +
-  geom_point(aes(color = Pop, shape = Pop)) +  
+  geom_point(aes(color = pop, shape = pop)) +  
   scale_color_manual(values = c("red", "blue")) +
   guides(size = FALSE) +
   labs(title = "SNP merged", x = paste0("PC1  (", var1, ")"), y = paste0("PC2  (", var2, ")"))
@@ -125,7 +129,7 @@ saveRDS(PC_1_2, file = paste0(FILE, "_PC1_2.plot.rds"))
 jpeg(paste0(FILE,".pc1-3.jpg"))
 
 PC_1_3 <- ggplot(data = SNP_df, aes(x = PC1, y = PC3)) +
-  geom_point(aes(color = Pop, shape = Pop)) +  
+  geom_point(aes(color = pop, shape = pop)) +  
   scale_color_manual(values = c("red", "blue")) +
   guides(size = FALSE) +
   labs(title = "SNP merged", x = paste0("PC1  (", var1, ")"), y = paste0("PC3  (", var3, ")"))
@@ -137,7 +141,7 @@ saveRDS(PC_1_3, file = paste0(FILE, "_PC1_3.plot.rds"))
 jpeg(paste0(FILE,".pc2-3.jpg"))
 
 PC_2_3 <- ggplot(data = SNP_df, aes(x = PC2, y = PC3)) +
-  geom_point(aes(color = Pop, shape = Pop)) +  
+  geom_point(aes(color = pop, shape = pop)) +  
   scale_color_manual(values = c("red", "blue")) +
   guides(size = FALSE) +
   labs(title = "SNP merged", x = paste0("PC2  (", var2, ")"), y = paste0("PC3  (", var3, ")"))
@@ -149,7 +153,7 @@ saveRDS(PC_2_3, file = paste0(FILE, "_PC2_3.plot.rds"))
 jpeg(paste0(FILE,".pc3-4.jpg"))
 
 PC_3_4 <- ggplot(data = SNP_df, aes(x = PC3, y = PC4)) +
-  geom_point(aes(color = Pop, shape = Pop)) +  
+  geom_point(aes(color = pop, shape = pop)) +  
   scale_color_manual(values = c("red", "blue")) +
   guides(size = FALSE) +
   labs(title = "SNP merged", x = paste0("PC3  (", var3, ")"), y = paste0("PC4  (", var4, ")"))
