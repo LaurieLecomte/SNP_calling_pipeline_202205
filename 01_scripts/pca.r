@@ -2,12 +2,20 @@
 # 
 
 # Libraries
-library(dplyr)
-library(magrittr)
-library(tibble)
-library(ggplot2)
-library(reshape2)
-library(data.table)
+## Check if required packages are installed 
+packages <- c('dplyr', 'magrittr', 'tibble', 'ggplot2', 'reshape2', 'data.table')
+install.packages(setdiff(packages, rownames(installed.packages())))
+## Load packages
+sapply(packages, library, character.only = TRUE)
+
+#library(dplyr)
+#library(magrittr)
+#library(tibble)
+#library(ggplot2)
+#library(reshape2)
+#library(data.table)
+
+
 
 # Access to files provided in command line arguments
 argv <- commandArgs(T)
@@ -32,7 +40,7 @@ geno.012 <- fread(FILE, showProgress = TRUE)[, -1] #read genotype_matrix and exc
 
 ## Set rownames and colnames for the genotype matrix
 colnames(geno.012) <- geno.012.pos$locus #each column is a SNP
-rownames(geno.012) <- geno.012.indv #each row is a different indv
+rownames(geno.012) <- geno.012.indv$ID #each row is a different indv
 
 ## Inspect matrix
 geno.012[1:12, 1:20] #show 12 first indv and 20 first SNPs 
@@ -118,7 +126,7 @@ jpeg(paste0(FILE,".pc1-2.jpg"))
 
 PC_1_2 <- ggplot(data = SNP_df, aes(x = PC1, y = PC2)) +
   geom_point(aes(color = pop, shape = pop)) +  
-  scale_color_manual(values = c("red", "blue")) +
+  #scale_color_manual(values = c("red", "blue")) +
   guides(size = FALSE) +
   labs(title = "SNP merged", x = paste0("PC1  (", var1, ")"), y = paste0("PC2  (", var2, ")"))
 PC_1_2
@@ -130,7 +138,7 @@ jpeg(paste0(FILE,".pc1-3.jpg"))
 
 PC_1_3 <- ggplot(data = SNP_df, aes(x = PC1, y = PC3)) +
   geom_point(aes(color = pop, shape = pop)) +  
-  scale_color_manual(values = c("red", "blue")) +
+  #scale_color_manual(values = c("red", "blue")) +
   guides(size = FALSE) +
   labs(title = "SNP merged", x = paste0("PC1  (", var1, ")"), y = paste0("PC3  (", var3, ")"))
 PC_1_3
@@ -142,7 +150,7 @@ jpeg(paste0(FILE,".pc2-3.jpg"))
 
 PC_2_3 <- ggplot(data = SNP_df, aes(x = PC2, y = PC3)) +
   geom_point(aes(color = pop, shape = pop)) +  
-  scale_color_manual(values = c("red", "blue")) +
+  #scale_color_manual(values = c("red", "blue")) +
   guides(size = FALSE) +
   labs(title = "SNP merged", x = paste0("PC2  (", var2, ")"), y = paste0("PC3  (", var3, ")"))
 PC_2_3
@@ -154,7 +162,7 @@ jpeg(paste0(FILE,".pc3-4.jpg"))
 
 PC_3_4 <- ggplot(data = SNP_df, aes(x = PC3, y = PC4)) +
   geom_point(aes(color = pop, shape = pop)) +  
-  scale_color_manual(values = c("red", "blue")) +
+  #scale_color_manual(values = c("red", "blue")) +
   guides(size = FALSE) +
   labs(title = "SNP merged", x = paste0("PC3  (", var3, ")"), y = paste0("PC4  (", var4, ")"))
 PC_3_4
