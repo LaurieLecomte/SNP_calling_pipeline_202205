@@ -15,11 +15,14 @@ FILT_DIR="07_filtered"
 CPU=2
 
 # TO DO : auto-format file names with pre-defined variables : 
-#MIN_DP=1
-#N_SAMPLES=$(less 02_infos/bam_list.txt | wc -l)
-#NS=$(echo "($(less 02_infos/bam_list.txt | wc -l) * 0.5)" | bc -l)
-#MIN_MAF=0.05
-#MAX_MAF=0.95
+MIN_DP=1
+#MAX_DP=4 # max allowed depth, SNP with depth over this threshold are suspicious ?
+
+MAX_ALL=2 # max number of allele per site
+N_SAMPLES=$(less 02_infos/bam_list.txt | wc -l)
+MIN_MAF=0.05
+MAX_MAF=0.95
+MAX_MISS=0.5
 
 # LOAD REQUIRED MODULES
 module load bcftools/1.15
@@ -27,17 +30,36 @@ module load bcftools/1.15
 module load htslib/1.8
 
 # 1. Add tags
-bcftools +fill-tags $MERGED_VCF -Oz -- -t all > $MERGED_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_tagged.vcf.gz
+bcftools +fill-tags --threads $CPU $MERGED_VCF -Oz -- -t all > $MERGED_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_tagged.vcf.gz
 
 # Filter with same criteria as SVs
+# 2. Filter for max number of alleles = extract biallelic sites
+bcftools view --threads $CPU --max-alleles $MAX_ALL $MERGED_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_tagged.vcf.gz -O z > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_"$MAX_ALL"all.vcf.gz
+
+# 3. Filter for maf  
+bcftools filter --threads $CPU -i "INFO/MAF >= $MIN_MAF" $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_"$MAX_ALL"all.vcf.gz -O z > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_"$MAX_ALL"all_maf"$MIN_MAF".vcf.gz
+
+# 4. Filter for depth > 1 (FORMAT/AD > 1) in genotyped samples, where at least 50% of samples have been genotyped
+bcftools filter --threads $CPU -S . -e "FORMAT/DP > $MIN_DP | FORMAT/DP < $MAX_DP" $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_"$MAX_ALL"all_maf"$MIN_MAF".vcf.gz -Ou | 
+  bcftools view --threads $CPU -i "F_MISSING < $MAX_MISS " -Oz -o $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_"$MAX_ALL"all_maf"$MIN_MAF"_FM"$MAX_MISS"_minDP"$MIN_DP".vcf.gz
+
+
+# 5. Compress and tabix
+#bgzip $FILT_DIR/filtered.vcf
+#bgzip $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD4_2all.vcf.gz
+tabix -p vcf $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_"$MAX_ALL"all_maf"$MIN_MAF"_FM"$MAX_MISS"_minDP"$MIN_DP".vcf.gz
+
+
+
+
 # 2. Filter for depth > 1 (FORMAT/AD > 1) in genotyped samples, where at least 50% of samples have been genotyped
-bcftools filter -i "N_PASS(GT!='mis' & FMT/AD>0) > 30" $MERGED_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_tagged.vcf.gz -O z --threads $CPU > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1.vcf.gz
+#bcftools filter -i "N_PASS(GT!='mis' & FMT/AD>0) > 30" $MERGED_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_tagged.vcf.gz -O z --threads $CPU > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1.vcf.gz
 
 # 3. Filter for genotyped in >50% of samples
 #bcftools filter -i 'INFO/NS >= 30' $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_DP1.vcf.gz -O z --threads $CPU > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_DP1_NS30.vcf.gz
 
 # 4. Filter for max number of alleles = 2
-bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1.vcf.gz -O z --threads $CPU > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all.vcf.gz
+#bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1.vcf.gz -O z --threads $CPU > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all.vcf.gz
 
 # 5. Filter for maf > 0.05 and < 0.95
 #bcftools filter -i 'INFO/MAF >= 0.05' && 'INFO/MAF <= 0.95' $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all.vcf.gz -O z --threads $CPU > $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all_maf0.05.vcf.gz
@@ -46,7 +68,7 @@ bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS3
 # 6. Compress and tabix
 #bgzip $FILT_DIR/filtered.vcf
 #bgzip $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all.vcf.gz
-tabix -p vcf $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all.vcf.gz
+#tabix -p vcf $FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_NS30_AD1_2all.vcf.gz
 
 
 
